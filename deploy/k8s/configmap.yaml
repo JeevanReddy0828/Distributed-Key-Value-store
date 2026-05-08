@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orcdb-config
+  namespace: orcdb
+data:
+  node.yaml: |
+    log_level: info
+    server:
+      bind: "0.0.0.0"
+      client_port: 2379
+      raft_port: 2380
+      io_threads: 4
+    storage:
+      data_dir: /var/lib/orcdb
+      sync_writes: true
+    raft:
+      election_timeout_min_ms: 150
+      election_timeout_max_ms: 300
+      heartbeat_interval_ms: 50
+      rpc_timeout_ms: 50
+    auth:
+      algorithm: HS256
+      issuer: orcdb

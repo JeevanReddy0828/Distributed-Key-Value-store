@@ -1,0 +1,22 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'orcdb'
+    static_configs:
+      - targets:
+          - 'orcdb-node1:2379'
+          - 'orcdb-node2:2379'
+          - 'orcdb-node3:2379'
+    metrics_path: /metrics
+    scrape_interval: 5s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label:  instance
+        regex:         '([^:]+):.*'
+        replacement:   '$1'
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

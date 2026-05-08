@@ -1,0 +1,37 @@
+# Headless service for stable DNS names used by Raft peer discovery
+apiVersion: v1
+kind: Service
+metadata:
+  name: orcdb-headless
+  namespace: orcdb
+  labels:
+    app: orcdb
+spec:
+  clusterIP: None
+  selector:
+    app: orcdb
+  ports:
+    - name: client
+      port: 2379
+      targetPort: 2379
+    - name: peer
+      port: 2380
+      targetPort: 2380
+---
+# ClusterIP service for client access (load-balanced across all nodes)
+apiVersion: v1
+kind: Service
+metadata:
+  name: orcdb
+  namespace: orcdb
+  labels:
+    app: orcdb
+spec:
+  type: ClusterIP
+  selector:
+    app: orcdb
+  ports:
+    - name: client
+      port:       2379
+      targetPort: 2379
+      protocol:   TCP

@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: orcdb
+  namespace: orcdb
+  labels:
+    app: orcdb
+spec:
+  serviceName: orcdb-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app: orcdb
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: orcdb
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "2379"
+        prometheus.io/path:   "/metrics"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: orcdb
+          image: orcdb:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: client
+              containerPort: 2379
+              protocol: TCP
+            - name: peer
+              containerPort: 2380
+              protocol: TCP
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name   # orcdb-0, orcdb-1, orcdb-2
+            - name: RAFT_PORT
+              value: "2380"
+            - name: PEERS
+              value: "orcdb-0.orcdb-headless.orcdb.svc.cluster.local:2380,orcdb-1.orcdb-headless.orcdb.svc.cluster.local:2380,orcdb-2.orcdb-headless.orcdb.svc.cluster.local:2380"
+            - name: DATA_DIR
+              value: /var/lib/orcdb
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: orcdb-secrets
+                  key:  jwt-secret
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/orcdb
+            - name: config
+              mountPath: /etc/orcdb
+              readOnly: true
+          resources:
+            requests:
+              cpu:    "250m"
+              memory: "256Mi"
+            limits:
+              cpu:    "2"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 2379
+            initialDelaySeconds: 15
+            periodSeconds:       10
+            failureThreshold:    3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 2379
+            initialDelaySeconds: 5
+            periodSeconds:       5
+            failureThreshold:    3
+          securityContext:
+            runAsNonRoot:             true
+            runAsUser:                1000
+            readOnlyRootFilesystem:   true
+            allowPrivilegeEscalation: false
+      volumes:
+        - name: config
+          configMap:
+            name: orcdb-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 10Gi

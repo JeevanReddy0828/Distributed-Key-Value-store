@@ -1,0 +1,32 @@
+node_id: node1
+log_level: info
+
+server:
+  bind: "0.0.0.0"
+  client_port: 2379
+  raft_port: 2380
+  io_threads: 4
+
+storage:
+  data_dir: /var/lib/orcdb/node1
+  sync_writes: true
+  wal_max_segment_bytes: 67108864  # 64 MB
+
+raft:
+  election_timeout_min_ms: 150
+  election_timeout_max_ms: 300
+  heartbeat_interval_ms: 50
+  rpc_timeout_ms: 50
+
+auth:
+  algorithm: HS256
+  secret: "CHANGE_ME_IN_PRODUCTION"
+  issuer: orcdb
+
+peers:
+  - id: node2
+    host: 127.0.0.1
+    raft_port: 2381
+  - id: node3
+    host: 127.0.0.1
+    raft_port: 2382

@@ -1,0 +1,17 @@
+# PVCs are managed by the StatefulSet volumeClaimTemplates.
+# This file documents the expected storage class requirements.
+# On GKE/EKS/OKE: use "standard" (GKE), "gp2" (EKS), or "oci-bv" (OKE).
+#
+# To provision manually for testing:
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: orcdb-data-manual
+  namespace: orcdb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 10Gi

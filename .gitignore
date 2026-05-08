@@ -1,0 +1,14 @@
+build/
+*.o
+*.a
+*.so
+*.d
+compile_commands.json
+.cache/
+.clangd/
+cmake-build-*/
+*.swp
+*.DS_Store
+/var/lib/orcdb/
+*.log
+.claude/

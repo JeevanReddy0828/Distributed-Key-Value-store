@@ -1,0 +1,104 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {"type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0"},
+    {"type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0"}
+  ],
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Raft Leader",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "targets": [{"expr": "sum(orcdb_raft_is_leader) by (instance)", "legendFormat": "{{instance}}"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "red", "value": 0}, {"color": "green", "value": 1}]}}}
+    },
+    {
+      "id": 2,
+      "title": "Raft Current Term",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 9, "x": 6, "y": 0},
+      "targets": [{"expr": "orcdb_raft_current_term", "legendFormat": "{{instance}}"}]
+    },
+    {
+      "id": 3,
+      "title": "Elections / min",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 9, "x": 15, "y": 0},
+      "targets": [{"expr": "rate(orcdb_raft_elections_total[1m]) * 60", "legendFormat": "{{instance}}"}],
+      "description": "High values indicate cluster instability"
+    },
+    {
+      "id": 4,
+      "title": "Raft Replication Latency p99 (ms)",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 6},
+      "targets": [
+        {"expr": "histogram_quantile(0.99, rate(orcdb_raft_replication_latency_ms_bucket[1m]))", "legendFormat": "p99 {{instance}}"},
+        {"expr": "histogram_quantile(0.50, rate(orcdb_raft_replication_latency_ms_bucket[1m]))", "legendFormat": "p50 {{instance}}"}
+      ]
+    },
+    {
+      "id": 5,
+      "title": "KV Operations / sec",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 6},
+      "targets": [
+        {"expr": "rate(orcdb_kv_puts_total[1m])",    "legendFormat": "puts {{instance}}"},
+        {"expr": "rate(orcdb_kv_gets_total[1m])",    "legendFormat": "gets {{instance}}"},
+        {"expr": "rate(orcdb_kv_deletes_total[1m])", "legendFormat": "deletes {{instance}}"}
+      ]
+    },
+    {
+      "id": 6,
+      "title": "HTTP Request Latency p99 (ms)",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 12},
+      "targets": [{"expr": "histogram_quantile(0.99, rate(orcdb_http_request_duration_ms_bucket[1m]))", "legendFormat": "p99 {{instance}}"}]
+    },
+    {
+      "id": 7,
+      "title": "Active TCP Connections",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 12},
+      "targets": [{"expr": "orcdb_active_connections", "legendFormat": "{{instance}}"}]
+    },
+    {
+      "id": 8,
+      "title": "KV Store Size (keys)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 18},
+      "targets": [{"expr": "sum(orcdb_kv_store_size)", "legendFormat": "total keys"}]
+    },
+    {
+      "id": 9,
+      "title": "WAL Bytes Written / sec",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 12, "x": 6, "y": 18},
+      "targets": [{"expr": "rate(orcdb_wal_bytes_written_total[1m])", "legendFormat": "{{instance}}"}]
+    },
+    {
+      "id": 10,
+      "title": "Committed Entries / sec",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 24},
+      "targets": [{"expr": "rate(orcdb_raft_committed_entries_total[1m])", "legendFormat": "{{instance}}"}]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "tags": ["orcdb", "raft", "distributed"],
+  "time": {"from": "now-30m", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "OrcDB Cluster",
+  "uid": "orcdb-cluster-v1",
+  "version": 1
+}

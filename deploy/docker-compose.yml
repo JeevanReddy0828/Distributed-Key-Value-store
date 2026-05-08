@@ -1,0 +1,110 @@
+version: '3.8'
+
+# OrcDB 3-node cluster + Prometheus + Grafana
+# Usage: docker-compose up --build
+
+x-orcdb-common: &orcdb-common
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+  restart: unless-stopped
+  environment:
+    JWT_SECRET: "dev-secret-change-in-production"
+    JWT_ALGORITHM: "HS256"
+    LOG_LEVEL: "info"
+
+services:
+  orcdb-node1:
+    <<: *orcdb-common
+    container_name: orcdb-node1
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    environment:
+      NODE_ID: node1
+      RAFT_PORT: "2380"
+      PEERS: "orcdb-node2:2380,orcdb-node3:2380"
+      DATA_DIR: /var/lib/orcdb
+      JWT_SECRET: "dev-secret-change-in-production"
+    volumes:
+      - orcdb-data1:/var/lib/orcdb
+    networks:
+      - orcdb-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:2379/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  orcdb-node2:
+    <<: *orcdb-common
+    container_name: orcdb-node2
+    ports:
+      - "2389:2379"
+      - "2390:2380"
+    environment:
+      NODE_ID: node2
+      RAFT_PORT: "2380"
+      PEERS: "orcdb-node1:2380,orcdb-node3:2380"
+      DATA_DIR: /var/lib/orcdb
+      JWT_SECRET: "dev-secret-change-in-production"
+    volumes:
+      - orcdb-data2:/var/lib/orcdb
+    networks:
+      - orcdb-net
+
+  orcdb-node3:
+    <<: *orcdb-common
+    container_name: orcdb-node3
+    ports:
+      - "2399:2379"
+      - "2400:2380"
+    environment:
+      NODE_ID: node3
+      RAFT_PORT: "2380"
+      PEERS: "orcdb-node1:2380,orcdb-node2:2380"
+      DATA_DIR: /var/lib/orcdb
+      JWT_SECRET: "dev-secret-change-in-production"
+    volumes:
+      - orcdb-data3:/var/lib/orcdb
+    networks:
+      - orcdb-net
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: orcdb-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    networks:
+      - orcdb-net
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: orcdb-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ../monitoring/grafana:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    networks:
+      - orcdb-net
+
+networks:
+  orcdb-net:
+    driver: bridge
+
+volumes:
+  orcdb-data1:
+  orcdb-data2:
+  orcdb-data3:
+  grafana-data:
